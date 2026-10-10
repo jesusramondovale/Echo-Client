@@ -1,10 +1,14 @@
+import 'package:echo/core/config.dart';
+import 'package:echo/core/theme.dart';
 import 'package:echo/features/feed/feed_providers.dart';
 import 'package:echo/features/feed/post_tile.dart';
 import 'package:echo/features/post/composer_page.dart';
 import 'package:echo/features/post/post_detail_page.dart';
 import 'package:echo/features/settings/settings_page.dart';
+import 'package:echo/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FeedPage extends ConsumerWidget {
   const FeedPage({super.key});
@@ -12,19 +16,47 @@ class FeedPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(feedProvider);
+    final l10n = AppLocalizations.of(context);
+    final ink = EchoColors.inkOf(context);
+    final muted = EchoColors.mutedOf(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Echo'),
+        titleSpacing: 20,
+        title: Row(
+          children: [
+            Text(
+              l10n.appName,
+              style: GoogleFonts.syne(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: ink,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Chip(
+              label: Text(l10n.zoneRadiusValue(AppConfig.feedRadiusKm)),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ],
+        ),
         actions: [
-          IconButton(
-            tooltip: 'Ajustes',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
-              );
-            },
-            icon: const Icon(Icons.tune),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: l10n.settings,
+              style: IconButton.styleFrom(
+                backgroundColor: EchoColors.cardOf(context),
+                side: BorderSide(color: EchoColors.outlineOf(context)),
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsPage()),
+                );
+              },
+              icon: const Icon(Icons.tune_rounded),
+            ),
           ),
         ],
       ),
@@ -38,7 +70,7 @@ class FeedPage extends ConsumerWidget {
           }
         },
         icon: const Icon(Icons.edit_outlined),
-        label: const Text('Escribir'),
+        label: Text(l10n.write),
       ),
       body: feed.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -48,11 +80,13 @@ class FeedPage extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Icon(Icons.wifi_off_rounded, size: 40, color: muted),
+                const SizedBox(height: 16),
                 Text(e.toString(), textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => ref.invalidate(feedProvider),
-                  child: const Text('Reintentar'),
+                  child: Text(l10n.retry),
                 ),
               ],
             ),
@@ -63,12 +97,30 @@ class FeedPage extends ConsumerWidget {
             return RefreshIndicator(
               onRefresh: () => ref.read(feedProvider.notifier).refresh(),
               child: ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.18),
+                  const Icon(
+                    Icons.radar_rounded,
+                    size: 48,
+                    color: EchoColors.primary,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    l10n.emptyZoneTitle,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.syne(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: ink,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
-                      'Nadie ha escrito cerca todavía.\nSé el primero en tu zona.',
+                      l10n.emptyZoneBody,
                       textAlign: TextAlign.center,
+                      style: TextStyle(color: muted, height: 1.45),
                     ),
                   ),
                 ],
@@ -86,6 +138,7 @@ class FeedPage extends ConsumerWidget {
                 return false;
               },
               child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(0, 8, 0, 100),
                 itemCount: state.items.length + (state.loadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index >= state.items.length) {

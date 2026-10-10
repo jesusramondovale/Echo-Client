@@ -1,5 +1,7 @@
+import 'package:echo/core/theme.dart';
 import 'package:echo/features/feed/feed_page.dart';
 import 'package:echo/features/map/map_page.dart';
+import 'package:echo/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class HomeShell extends StatefulWidget {
@@ -14,6 +16,8 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       body: IndexedStack(
         index: _index,
@@ -22,21 +26,29 @@ class _HomeShellState extends State<HomeShell> {
           MapPage(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.forum_outlined),
-            selectedIcon: Icon(Icons.forum),
-            label: 'Zona',
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: EchoColors.cardOf(context),
+          border: Border(
+            top: BorderSide(color: EchoColors.outlineOf(context)),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
-            label: 'Mapa',
-          ),
-        ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.forum_outlined),
+              selectedIcon: const Icon(Icons.forum_rounded),
+              label: l10n.tabZone,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.map_outlined),
+              selectedIcon: const Icon(Icons.map_rounded),
+              label: l10n.tabMap,
+            ),
+          ],
+        ),
       ),
     );
   }

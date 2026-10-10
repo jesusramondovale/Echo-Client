@@ -1,7 +1,12 @@
+import 'package:echo/core/app_settings.dart';
 import 'package:echo/core/config.dart';
+import 'package:echo/core/theme.dart';
+import 'package:echo/features/notifications/push_service.dart';
 import 'package:echo/features/session/session_providers.dart';
+import 'package:echo/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -16,6 +21,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _busy = false;
 
   Future<void> _pickAvatar() async {
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _busy = true;
       _message = null;
@@ -35,8 +41,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (!allowed) {
         setState(() {
           _busy = false;
-          _message =
-              'Avatar rechazado: no se permiten imágenes con personas reconocibles.';
+          _message = l10n.avatarRejected;
         });
         return;
       }
@@ -49,7 +54,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       await api.setAvatar(media.id);
       setState(() {
         _busy = false;
-        _message = 'Avatar actualizado.';
+        _message = l10n.avatarUpdated;
       });
     } catch (e) {
       setState(() {
@@ -61,64 +66,140 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final settings = ref.watch(appSettingsProvider);
+    final ink = EchoColors.inkOf(context);
+    final muted = EchoColors.mutedOf(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Ajustes')),
+      appBar: AppBar(
+        title: Text(
+          l10n.settings,
+          style: GoogleFonts.syne(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: ink,
+          ),
+        ),
+      ),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
         children: [
-          ListTile(
-            title: const Text('Radio de zona'),
-            subtitle: Text('${AppConfig.feedRadiusKm} km'),
+          _SettingsCard(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.radar_rounded),
+                title: Text(l10n.zoneRadius),
+                subtitle: Text(l10n.zoneRadiusValue(AppConfig.feedRadiusKm)),
+              ),
+              const Divider(height: 1, indent: 20, endIndent: 20),
+              SwitchListTile(
+                secondary: const Icon(Icons.dark_mode_outlined),
+                title: Text(l10n.darkThemeTitle),
+                subtitle: Text(l10n.darkThemeSubtitle),
+                value: settings.darkMode,
+                onChanged: (v) =>
+                    ref.read(appSettingsProvider.notifier).setDarkMode(v),
+              ),
+              const Divider(height: 1, indent: 20, endIndent: 20),
+              SwitchListTile(
+                secondary: const Icon(Icons.notifications_outlined),
+                title: Text(l10n.notificationsTitle),
+                subtitle: Text(l10n.notificationsSubtitle),
+                value: settings.notificationsEnabled,
+                onChanged: (v) async {
+                  await ref
+                      .read(appSettingsProvider.notifier)
+                      .setNotificationsEnabled(v);
+                  if (v) {
+                    await ref.read(pushServiceProvider).syncToken();
+                  }
+                },
+              ),
+            ],
           ),
-          ListTile(
-            title: const Text('Avatar (sin caras)'),
-            subtitle: const Text('Opcional. Se rechaza si ML Kit detecta una cara.'),
-            trailing: _busy
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.person_outline),
-            onTap: _busy ? null : _pickAvatar,
-          ),
-          ListTile(
-            title: const Text('Nueva identidad anónima'),
-            subtitle: const Text(
-              'Borra la clave de este dispositivo y empieza de cero.',
-            ),
-            onTap: () async {
-              final ok = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('¿Nueva identidad?'),
-                  content: const Text(
-                    'Perderás el vínculo con tus mensajes anteriores en este dispositivo.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Cancelar'),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Continuar'),
-                    ),
-                  ],
+          const SizedBox(height: 12),
+          _SettingsCard(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.person_outline_rounded),
+                title: Text(l10n.avatarTitle),
+                subtitle: Text(l10n.avatarSubtitle),
+                trailing: _busy
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chevron_right_rounded),
+                onTap: _busy ? null : _pickAvatar,
+              ),
+              const Divider(height: 1, indent: 20, endIndent: 20),
+              ListTile(
+                leading: const Icon(
+                  Icons.refresh_rounded,
+                  color: EchoColors.secondary,
                 ),
-              );
-              if (ok == true) {
-                await ref.read(appBootstrapProvider.notifier).resetIdentity();
-                if (context.mounted) Navigator.of(context).pop();
-              }
-            },
+                title: Text(l10n.newIdentityTitle),
+                subtitle: Text(l10n.newIdentitySubtitle),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(l10n.newIdentityDialogTitle),
+                      content: Text(l10n.newIdentityDialogBody),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(l10n.cancel),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(l10n.continueAction),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (ok == true) {
+                    await ref.read(appBootstrapProvider.notifier).resetIdentity();
+                    if (context.mounted) Navigator.of(context).pop();
+                  }
+                },
+              ),
+            ],
           ),
           if (_message != null)
             Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(_message!),
+              padding: const EdgeInsets.fromLTRB(8, 20, 8, 0),
+              child: Text(
+                _message!,
+                style: GoogleFonts.plusJakartaSans(
+                  color: muted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
         ],
       ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: EchoColors.cardOf(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: EchoColors.outlineOf(context)),
+      ),
+      child: Column(children: children),
     );
   }
 }

@@ -14,20 +14,56 @@ class LocationFix {
   final DateTime timestamp;
 }
 
+enum LocationAccessResult {
+  granted,
+  serviceDisabled,
+  permissionDenied,
+  permissionDeniedForever,
+}
+
 class LocationService {
   Future<bool> ensurePermission() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return false;
+    final result = await requestAccess(openSettingsIfNeeded: false);
+    return result == LocationAccessResult.granted;
+  }
+
+  /// Requests location permission and, when needed, opens system settings
+  /// so the user can enable GPS or unlock app permission.
+  Future<LocationAccessResult> requestAccess({
+    bool openSettingsIfNeeded = true,
+  }) async {
+    var serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (openSettingsIfNeeded) {
+        await Geolocator.openLocationSettings();
+        serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      }
+      if (!serviceEnabled) {
+        return LocationAccessResult.serviceDisabled;
+      }
+    }
 
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return false;
+
+    if (permission == LocationPermission.deniedForever) {
+      if (openSettingsIfNeeded) {
+        await Geolocator.openAppSettings();
+        permission = await Geolocator.checkPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        return LocationAccessResult.permissionDeniedForever;
+      }
     }
-    return true;
+
+    if (permission == LocationPermission.denied) {
+      return LocationAccessResult.permissionDenied;
+    }
+
+    return LocationAccessResult.granted;
   }
 
   Future<LocationFix> currentFix() async {

@@ -40,6 +40,7 @@ class FeedNotifier extends AsyncNotifier<FeedState> {
   @override
   Future<FeedState> build() async {
     final fix = await ref.read(locationServiceProvider).currentFix();
+    ref.read(viewerLocationProvider.notifier).update(fix);
     final page = await ref.read(echoApiProvider).getFeed(
           lat: fix.latitude,
           lon: fix.longitude,
@@ -54,6 +55,7 @@ class FeedNotifier extends AsyncNotifier<FeedState> {
     }
     try {
       final fix = await ref.read(locationServiceProvider).currentFix();
+      ref.read(viewerLocationProvider.notifier).update(fix);
       final page = await ref.read(echoApiProvider).getFeed(
             lat: fix.latitude,
             lon: fix.longitude,
@@ -82,6 +84,7 @@ class FeedNotifier extends AsyncNotifier<FeedState> {
     state = AsyncData(current.copyWith(loadingMore: true));
     try {
       final fix = await ref.read(locationServiceProvider).currentFix();
+      ref.read(viewerLocationProvider.notifier).update(fix);
       final page = await ref.read(echoApiProvider).getFeed(
             lat: fix.latitude,
             lon: fix.longitude,
@@ -109,6 +112,25 @@ class FeedNotifier extends AsyncNotifier<FeedState> {
     if (current == null) return;
     state = AsyncData(
       current.copyWith(items: [post, ...current.items]),
+    );
+  }
+
+  void patchBoost(String postId, int reachBoost, bool viewerHasBoosted) {
+    final current = state.asData?.value;
+    if (current == null) return;
+    state = AsyncData(
+      current.copyWith(
+        items: [
+          for (final item in current.items)
+            if (item.id == postId)
+              item.copyWith(
+                reachBoost: reachBoost,
+                viewerHasBoosted: viewerHasBoosted,
+              )
+            else
+              item,
+        ],
+      ),
     );
   }
 }

@@ -120,6 +120,39 @@ class EchoApi {
     return ReplyItem.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<void> registerPushToken({
+    required String token,
+    required String platform,
+  }) async {
+    await _dio.put(
+      '/api/me/push-token',
+      data: {
+        'token': token,
+        'platform': platform,
+      },
+    );
+  }
+
+  /// +1 km of visibility for a post (one boost per user).
+  Future<BoostResult> boostPost({
+    required String postId,
+    required double lat,
+    required double lon,
+  }) async {
+    final res = await _dio.post(
+      '/api/posts/$postId/boost',
+      queryParameters: {
+        'lat': lat,
+        'lon': lon,
+      },
+    );
+    final data = res.data as Map<String, dynamic>;
+    return BoostResult(
+      reachBoost: data['reachBoost'] as int? ?? 0,
+      viewerHasBoosted: data['viewerHasBoosted'] as bool? ?? true,
+    );
+  }
+
   Future<MediaDto> uploadMedia({
     required String filePath,
     required String fileName,
@@ -151,8 +184,15 @@ class EchoApi {
   String resolveMediaUrl(String url) => _resolveMediaUrl(url);
 
   String _resolveMediaUrl(String url) {
-    if (url.startsWith('http')) return url;
     final base = AppConfig.apiBaseUrl.replaceAll(RegExp(r'/$'), '');
+    if (url.startsWith('http')) {
+      final uri = Uri.tryParse(url);
+      if (uri != null && uri.path.contains('/media')) {
+        // Rewrite absolute media hosts (public IP / wrong port) to current API base.
+        return '$base${uri.path}${uri.hasQuery ? '?${uri.query}' : ''}';
+      }
+      return url;
+    }
     return '$base${url.startsWith('/') ? '' : '/'}$url';
   }
 

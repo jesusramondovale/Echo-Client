@@ -9,12 +9,12 @@ Cliente Android/iOS del foro anónimo localizado **Echo**.
 
 ## Configurar API
 
-Por defecto conecta a **`http://83.54.52.239`** (servidor en red).
+Por defecto conecta a **`http://83.58.254.192:8080`** (API pública).
 
-Para apuntar a otro host:
+En LAN local:
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://83.54.52.239:8080
+flutter run --dart-define=API_BASE_URL=http://192.168.1.33:8080
 ```
 
 ## Funciones MVP

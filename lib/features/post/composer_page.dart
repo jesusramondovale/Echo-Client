@@ -1,9 +1,12 @@
 import 'dart:io';
 
 import 'package:echo/core/echo_api.dart';
+import 'package:echo/core/theme.dart';
 import 'package:echo/features/session/session_providers.dart';
+import 'package:echo/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ComposerPage extends ConsumerStatefulWidget {
@@ -44,8 +47,7 @@ class _ComposerPageState extends ConsumerState<ComposerPage> {
     if (!allowed) {
       setState(() {
         _image = null;
-        _error =
-            'No se permiten fotos donde se reconozca a personas. Elige otra imagen.';
+        _error = AppLocalizations.of(context).imageNoPeople;
       });
       return;
     }
@@ -56,7 +58,7 @@ class _ComposerPageState extends ConsumerState<ComposerPage> {
   Future<void> _submit() async {
     final body = _controller.text.trim();
     if (body.isEmpty) {
-      setState(() => _error = 'Escribe algo.');
+      setState(() => _error = AppLocalizations.of(context).writeSomething);
       return;
     }
 
@@ -76,7 +78,7 @@ class _ComposerPageState extends ConsumerState<ComposerPage> {
         if (!allowed) {
           setState(() {
             _submitting = false;
-            _error = 'Imagen rechazada: se detectó una cara.';
+            _error = AppLocalizations.of(context).imageRejectedFace;
           });
           return;
         }
@@ -116,67 +118,105 @@ class _ComposerPageState extends ConsumerState<ComposerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isReply ? 'Responder' : 'Nuevo eco'),
+        titleSpacing: 0,
+        title: Text(
+          _isReply ? l10n.reply : l10n.newEcho,
+          style: GoogleFonts.syne(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: EchoColors.inkOf(context),
+          ),
+        ),
         actions: [
-          TextButton(
-            onPressed: _submitting ? null : _submit,
-            child: _submitting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Publicar'),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: FilledButton(
+              onPressed: _submitting ? null : _submit,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                minimumSize: Size.zero,
+              ),
+              child: _submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(l10n.publish),
+            ),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
         children: [
           TextField(
             controller: _controller,
-            maxLines: 8,
+            maxLines: 10,
             maxLength: 2000,
-            decoration: const InputDecoration(
-              hintText: '¿Qué se oye por aquí?',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 17,
+              height: 1.45,
+            ),
+            decoration: InputDecoration(
+              hintText: l10n.composerHint,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           if (_image != null)
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(18),
                   child: Image.file(
                     File(_image!.path),
-                    height: 180,
+                    height: 200,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),
                 ),
                 Positioned(
-                  top: 8,
-                  right: 8,
+                  top: 10,
+                  right: 10,
                   child: IconButton.filled(
+                    style: IconButton.styleFrom(
+                      backgroundColor: EchoColors.ink.withValues(alpha: 0.72),
+                      foregroundColor: Colors.white,
+                    ),
                     onPressed: () => setState(() => _image = null),
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close_rounded),
                   ),
                 ),
               ],
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: _submitting ? null : _pickImage,
-            icon: const Icon(Icons.image_outlined),
-            label: const Text('Añadir imagen (sin caras)'),
+            icon: const Icon(Icons.image_outlined, size: 20),
+            label: Text(l10n.addImageNoFaces),
           ),
           if (_error != null) ...[
             const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                _error!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ],

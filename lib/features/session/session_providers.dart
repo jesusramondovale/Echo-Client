@@ -13,6 +13,19 @@ final echoApiProvider = Provider<EchoApi>((ref) {
 final locationServiceProvider =
     Provider<LocationService>((ref) => LocationService());
 
+/// Last known viewer fix (updated by feed/map/detail loads).
+class ViewerLocationNotifier extends Notifier<LocationFix?> {
+  @override
+  LocationFix? build() => null;
+
+  void update(LocationFix fix) => state = fix;
+}
+
+final viewerLocationProvider =
+    NotifierProvider<ViewerLocationNotifier, LocationFix?>(
+  ViewerLocationNotifier.new,
+);
+
 final faceGateProvider = Provider<FaceGate>((ref) {
   final gate = FaceGate();
   ref.onDispose(() {
@@ -60,8 +73,8 @@ class AppBootstrapNotifier extends AsyncNotifier<AppBootstrapState> {
 
   Future<void> requestLocationAgain() async {
     final location = ref.read(locationServiceProvider);
-    final ok = await location.ensurePermission();
-    if (ok) {
+    final result = await location.requestAccess(openSettingsIfNeeded: true);
+    if (result == LocationAccessResult.granted) {
       state = const AsyncData(AppBootstrapState(phase: AppPhase.ready));
     } else {
       state = const AsyncData(AppBootstrapState(phase: AppPhase.needsLocation));

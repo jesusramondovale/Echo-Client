@@ -1,0 +1,88 @@
+{
+  "@@locale": "es",
+  "appName": "Echo",
+  "tabZone": "Zona",
+  "tabMap": "Mapa",
+  "settings": "Ajustes",
+  "retry": "Reintentar",
+  "write": "Escribir",
+  "reply": "Responder",
+  "publish": "Publicar",
+  "cancel": "Cancelar",
+  "continueAction": "Continuar",
+  "openThread": "Abrir hilo",
+  "thread": "Hilo",
+  "map": "Mapa",
+  "refresh": "Actualizar",
+  "zoneRadius": "Radio de zona",
+  "zoneRadiusValue": "{km} km",
+  "@zoneRadiusValue": {
+    "placeholders": {
+      "km": { "type": "int" }
+    }
+  },
+  "distanceAt": "A {distance}",
+  "@distanceAt": {
+    "placeholders": {
+      "distance": { "type": "String" }
+    }
+  },
+  "distanceUnknown": "A —",
+  "fromYourPosition": "desde tu posición",
+  "repliesCount": "{count} respuestas",
+  "@repliesCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "boostPlusKm": "+1 km",
+  "boostPlusKmReach": "+1 km de alcance",
+  "boosted": "Ampliado",
+  "alreadyBoosted": "Ya ampliaste",
+  "emptyZoneTitle": "Zona en silencio",
+  "emptyZoneBody": "Nadie ha escrito cerca todavía.\nSé el primero en tu zona.",
+  "noRepliesYet": "Aún no hay respuestas.",
+  "repliesSection": "Respuestas",
+  "nearbyEcho": "Eco cercano",
+  "mapOverlay": "{count} ecos en {km} km  ·  tú estás en el pin teal",
+  "@mapOverlay": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "km": { "type": "int" }
+    }
+  },
+  "newEcho": "Nuevo eco",
+  "composerHint": "¿Qué se oye por aquí?",
+  "addImageNoFaces": "Añadir imagen (sin caras)",
+  "writeSomething": "Escribe algo.",
+  "imageRejectedFace": "Imagen rechazada: se detectó una cara.",
+  "imageNoPeople": "No se permiten fotos donde se reconozca a personas. Elige otra imagen.",
+  "gateHeadline": "Solo ves mensajes a 15 km de donde estás. Sin cuentas, sin nombres.",
+  "gateCardTitle": "Ubicación para abrir tu zona",
+  "gateCardBody": "Necesitamos GPS (y comprobamos la zona aproximada de tu red) para abrir el foro de tu alrededor.",
+  "enableLocation": "Activar ubicación",
+  "connectionFailed": "No se pudo conectar.",
+  "avatarTitle": "Avatar (sin caras)",
+  "avatarSubtitle": "Opcional. Se rechaza si ML Kit detecta una cara.",
+  "avatarRejected": "Avatar rechazado: no se permiten imágenes con personas reconocibles.",
+  "avatarUpdated": "Avatar actualizado.",
+  "newIdentityTitle": "Nueva identidad anónima",
+  "newIdentitySubtitle": "Borra la clave de este dispositivo y empieza de cero.",
+  "newIdentityDialogTitle": "¿Nueva identidad?",
+  "newIdentityDialogBody": "Perderás el vínculo con tus mensajes anteriores en este dispositivo.",
+  "darkThemeTitle": "Tema oscuro",
+  "darkThemeSubtitle": "Fondo negro OLED para ahorrar batería.",
+  "notificationsTitle": "Notificaciones",
+  "notificationsSubtitle": "+1 a tus ecos y nuevos mensajes en tu zona.",
+  "boostTooltip": "Ampliaciones de alcance: {label} km",
+  "@boostTooltip": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "settingsTitleStyle": "Ajustes",
+  "pushBoostTitle": "Tu eco llega más lejos",
+  "pushBoostBody": "Alguien amplió el alcance de tu mensaje.",
+  "pushNewPostTitle": "Nuevo eco cerca",
+  "pushNewPostBody": "Alguien escribió en tu zona."
+}

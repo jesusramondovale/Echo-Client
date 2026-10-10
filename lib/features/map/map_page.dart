@@ -1,10 +1,17 @@
+import 'dart:ui';
+
 import 'package:echo/core/config.dart';
+import 'package:echo/core/geo.dart';
 import 'package:echo/core/models.dart';
+import 'package:echo/core/theme.dart';
+import 'package:echo/core/widgets/reach_boost_badge.dart';
 import 'package:echo/features/post/post_detail_page.dart';
 import 'package:echo/features/session/session_providers.dart';
+import 'package:echo/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 
 class MapViewData {
@@ -28,6 +35,7 @@ class MapViewNotifier extends AsyncNotifier<MapViewData> {
 
   Future<MapViewData> _load() async {
     final fix = await ref.read(locationServiceProvider).currentFix();
+    ref.read(viewerLocationProvider.notifier).update(fix);
     final page = await ref.read(echoApiProvider).getMap(
           lat: fix.latitude,
           lon: fix.longitude,
@@ -61,17 +69,32 @@ class _MapPageState extends ConsumerState<MapPage> {
   @override
   Widget build(BuildContext context) {
     final map = ref.watch(mapViewProvider);
-    final teal = Theme.of(context).colorScheme.primary;
-    final coral = Theme.of(context).colorScheme.secondary;
+    final l10n = AppLocalizations.of(context);
+    final ink = EchoColors.inkOf(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mapa'),
+        titleSpacing: 20,
+        title: Text(
+          l10n.map,
+          style: GoogleFonts.syne(
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+            color: ink,
+          ),
+        ),
         actions: [
-          IconButton(
-            tooltip: 'Actualizar',
-            onPressed: () => ref.read(mapViewProvider.notifier).refresh(),
-            icon: const Icon(Icons.refresh),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: l10n.refresh,
+              style: IconButton.styleFrom(
+                backgroundColor: EchoColors.cardOf(context),
+                side: BorderSide(color: EchoColors.outlineOf(context)),
+              ),
+              onPressed: () => ref.read(mapViewProvider.notifier).refresh(),
+              icon: const Icon(Icons.refresh_rounded),
+            ),
           ),
         ],
       ),
@@ -87,7 +110,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => ref.read(mapViewProvider.notifier).refresh(),
-                  child: const Text('Reintentar'),
+                  child: Text(l10n.retry),
                 ),
               ],
             ),
@@ -116,8 +139,8 @@ class _MapPageState extends ConsumerState<MapPage> {
                         point: data.user,
                         radius: AppConfig.feedRadiusKm * 1000,
                         useRadiusInMeter: true,
-                        color: teal.withValues(alpha: 0.08),
-                        borderColor: teal.withValues(alpha: 0.45),
+                        color: EchoColors.primary.withValues(alpha: 0.08),
+                        borderColor: EchoColors.primary.withValues(alpha: 0.45),
                         borderStrokeWidth: 2,
                       ),
                     ],
@@ -127,17 +150,13 @@ class _MapPageState extends ConsumerState<MapPage> {
                       ...data.posts.map(
                         (post) => Marker(
                           point: LatLng(post.lat!, post.lon!),
-                          width: 40,
-                          height: 40,
+                          width: 42,
+                          height: 42,
                           child: GestureDetector(
-                            onTap: () => _openPost(post),
-                            child: Icon(
-                              Icons.chat_bubble,
-                              color: coral,
-                              size: 32,
-                              shadows: const [
-                                Shadow(color: Colors.white, blurRadius: 6),
-                              ],
+                            onTap: () => _openPost(post, data.user),
+                            child: const _MapPin(
+                              color: EchoColors.secondary,
+                              icon: Icons.chat_bubble_rounded,
                             ),
                           ),
                         ),
@@ -146,13 +165,10 @@ class _MapPageState extends ConsumerState<MapPage> {
                         point: data.user,
                         width: 48,
                         height: 48,
-                        child: Icon(
-                          Icons.person_pin_circle,
-                          color: teal,
-                          size: 44,
-                          shadows: const [
-                            Shadow(color: Colors.white, blurRadius: 8),
-                          ],
+                        child: const _MapPin(
+                          color: EchoColors.primary,
+                          icon: Icons.near_me_rounded,
+                          size: 48,
                         ),
                       ),
                     ],
@@ -163,29 +179,44 @@ class _MapPageState extends ConsumerState<MapPage> {
                 left: 16,
                 right: 16,
                 bottom: 16,
-                child: Material(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    child: Text(
-                      '${data.posts.length} ecos en 15 km  ·  tú estás en el pin verde',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: EchoColors.outline),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        child: Text(
+                          l10n.mapOverlay(
+                            data.posts.length,
+                            AppConfig.feedRadiusKm,
+                          ),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: EchoColors.inkOf(context),
+                              ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
               Positioned(
                 right: 16,
-                bottom: 76,
+                bottom: 78,
                 child: FloatingActionButton.small(
                   heroTag: 'recenter',
                   onPressed: () => _controller.move(data.user, 12.2),
-                  child: const Icon(Icons.my_location),
+                  child: const Icon(Icons.my_location_rounded),
                 ),
               ),
             ],
@@ -195,37 +226,115 @@ class _MapPageState extends ConsumerState<MapPage> {
     );
   }
 
-  void _openPost(PostSummary post) {
+  void _openPost(PostSummary post, LatLng user) {
+    final distance = (post.lat != null && post.lon != null)
+        ? EchoGeo.formatKm(
+            EchoGeo.distanceKm(
+              lat1: user.latitude,
+              lon1: user.longitude,
+              lat2: post.lat!,
+              lon2: post.lon!,
+            ),
+          )
+        : null;
+
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(post.authorGlyph, style: Theme.of(ctx).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(post.body, style: Theme.of(ctx).textTheme.bodyLarge),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => PostDetailPage(postId: post.id),
-                    ),
-                  );
-                },
-                child: const Text('Abrir hilo'),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  ReachBoostBadge(reachBoost: post.reachBoost, size: 40),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.nearbyEcho,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: EchoColors.mutedOf(ctx),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        distance == null
+                            ? l10n.distanceUnknown
+                            : l10n.distanceAt(distance),
+                        style: GoogleFonts.plusJakartaSans(
+                          color: EchoColors.inkOf(ctx),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
+              const SizedBox(height: 14),
+              Text(
+                post.body,
+                style: Theme.of(ctx).textTheme.bodyLarge?.copyWith(height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => PostDetailPage(postId: post.id),
+                      ),
+                    );
+                  },
+                  child: Text(l10n.openThread),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MapPin extends StatelessWidget {
+  const _MapPin({
+    required this.color,
+    required this.icon,
+    this.size = 42,
+  });
+
+  final Color color;
+  final IconData icon;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.35),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
+      child: Icon(icon, color: Colors.white, size: size * 0.45),
     );
   }
 }
