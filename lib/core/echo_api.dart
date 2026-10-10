@@ -123,12 +123,14 @@ class EchoApi {
   Future<void> registerPushToken({
     required String token,
     required String platform,
+    String? locale,
   }) async {
     await _dio.put(
       '/api/me/push-token',
       data: {
         'token': token,
         'platform': platform,
+        if (locale != null && locale.isNotEmpty) 'locale': locale,
       },
     );
   }
